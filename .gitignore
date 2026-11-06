@@ -1,0 +1,13 @@
+# NetBeans & Java Build Artifacts
+**/build/
+**/dist/
+**/nbproject/private/
+*.class
+*.jar
+!SistemaRestaurante/lib/*.jar
+
+# OS and IDE files
+.DS_Store
+*.swp
+*.bak
+*~

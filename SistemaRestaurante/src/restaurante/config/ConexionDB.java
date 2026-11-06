@@ -12,6 +12,7 @@ import java.sql.SQLException;
 public class ConexionDB {
     private static volatile ConexionDB instancia;
     private Connection conexion;
+    private boolean modoOffline = false;
 
     private static final String URL = "jdbc:mysql://localhost:3306/db_restaurante?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String USER = "root";
@@ -24,8 +25,10 @@ public class ConexionDB {
             System.out.println("[SINGLETON] Conexión MySQL inicializada con éxito.");
         } catch (ClassNotFoundException e) {
             System.err.println("[SINGLETON ERROR] Driver MySQL no encontrado: " + e.getMessage());
+            this.modoOffline = true;
         } catch (SQLException e) {
-            System.err.println("[SINGLETON AVISO] Base de datos no conectada (Modo offline para pruebas locales): " + e.getMessage());
+            System.out.println("[SINGLETON] Modo local/offline activo (MySQL no detectado en localhost).");
+            this.modoOffline = true;
         }
     }
 
@@ -40,13 +43,24 @@ public class ConexionDB {
         return instancia;
     }
 
+    public boolean isConectado() {
+        try {
+            return this.conexion != null && !this.conexion.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
     public Connection getConnection() {
+        if (modoOffline) {
+            return null;
+        }
         try {
             if (this.conexion == null || this.conexion.isClosed()) {
                 this.conexion = DriverManager.getConnection(URL, USER, PASS);
             }
         } catch (SQLException e) {
-            System.err.println("[SINGLETON] Error reconectando: " + e.getMessage());
+            modoOffline = true;
         }
         return this.conexion;
     }
