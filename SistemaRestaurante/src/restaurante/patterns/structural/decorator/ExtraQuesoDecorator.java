@@ -27,6 +27,6 @@ public class ExtraQuesoDecorator extends PlatoDecorator {
     @Override
     public void mostrarDetalle(String indent) {
         super.mostrarDetalle(indent);
-        System.out.println(indent + "   🧀 [DECORATOR]: Extra Queso Cheddar (+ S/ " + String.format("%.2f", PRECIO_EXTRA) + ")");
+        System.out.println(indent + "   [DECORATOR]: Extra Queso Cheddar (+ S/ " + String.format("%.2f", PRECIO_EXTRA) + ")");
     }
 }

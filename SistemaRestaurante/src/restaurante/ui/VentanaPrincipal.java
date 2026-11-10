@@ -45,23 +45,22 @@ import restaurante.patterns.structural.proxy.AlmacenProxySeguro;
 
 /**
  * Interfaz Grafica Moderna e Intuitiva - Gourmet Restaurant POS
- * Botones con alto contraste visual (anti-aliasing personalizado),
- * persistencia LocalStorage (JSON) y demostracion practica de los 15 Patrones GOF.
+ * Con persistencia LocalStorage (JSON), tabla visual de patrones y botones de alto contraste.
  * Responsable Tecnico: Lincoln Vega Hidalgo
  */
 public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
-    // Paleta de Colores Moderna (Tailwind-inspired)
-    private static final Color COLOR_PRIMARY = new Color(26, 54, 93);       // Navy profundo
-    private static final Color COLOR_GREEN = new Color(22, 163, 74);        // Verde esmeralda para confirmar
-    private static final Color COLOR_BLUE = new Color(37, 99, 235);         // Azul accion
-    private static final Color COLOR_AMBER = new Color(217, 119, 6);        // Ambar para estados
-    private static final Color COLOR_RED = new Color(220, 38, 38);          // Rojo cancelar
-    private static final Color COLOR_GRAY_BG = new Color(248, 250, 252);    // Fondo suave
-    private static final Color COLOR_CARD_BG = new Color(255, 255, 255);    // Tarjetas blancas
-    private static final Color COLOR_BORDER = new Color(226, 232, 240);     // Bordes sutiles
+    // Paleta de Colores
+    private static final Color COLOR_PRIMARY = new Color(26, 54, 93);       // Navy
+    private static final Color COLOR_GREEN = new Color(22, 163, 74);        // Verde confirmar
+    private static final Color COLOR_BLUE = new Color(37, 99, 235);         // Azul
+    private static final Color COLOR_AMBER = new Color(217, 119, 6);        // Ambar
+    private static final Color COLOR_RED = new Color(220, 38, 38);          // Rojo
+    private static final Color COLOR_GRAY_BG = new Color(248, 250, 252);    // Fondo
+    private static final Color COLOR_CARD_BG = new Color(255, 255, 255);    // Tarjetas
+    private static final Color COLOR_BORDER = new Color(226, 232, 240);     // Bordes
 
-    // Negocio y Patrones
+    // Capa de Negocio
     private LocalStorageDB storageDB;
     private RestauranteFacade facade;
     private CatalogoPlantillas catalogoPlantillas;
@@ -98,7 +97,9 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     private DefaultTableModel modeloInventario;
     private JTable tblInventario;
 
-    // Componentes - Auditoria
+    // Componentes - Auditoria Visual
+    private DefaultTableModel modeloTablaPatrones;
+    private JTable tblPatrones;
     private JTextArea txtConsolaLogs;
 
     public VentanaPrincipal() {
@@ -119,7 +120,6 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         this.proxyAlmacen = new AlmacenProxySeguro("COCINA");
         this.carritoItems = new ArrayList<>();
 
-        // Registrar plantilla para PROTOTYPE
         Pedido plantillaEjecutiva = new Pedido("PLANT-EJEC", "Cliente Ejecutivo", "SALON");
         plantillaEjecutiva.agregarItem(new PlatoSimple("P-EJEC", "Almuerzo Ejecutivo Completo", 18.00));
         catalogoPlantillas.registrarPlantilla("EJECUTIVO", plantillaEjecutiva);
@@ -133,10 +133,6 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         setLayout(new BorderLayout());
     }
 
-    /**
-     * Fabrica de botones personalizados de alto contraste.
-     * Evita el fallo de renderizado blanco sobre blanco de Windows LookAndFeel.
-     */
     public static JButton crearBotonEstilizado(String texto, Color bg, Color fg, int altura) {
         JButton btn = new JButton(texto) {
             @Override
@@ -167,7 +163,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     }
 
     private void crearInterfazGrafica() {
-        // --- HEADER PRINCIPAL ---
+        // --- HEADER ---
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(COLOR_PRIMARY);
         header.setBorder(new EmptyBorder(14, 24, 14, 24));
@@ -194,7 +190,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
         add(header, BorderLayout.NORTH);
 
-        // --- SISTEMA DE PESTANAS (TABBED PANE) ---
+        // --- PESTANAS ---
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -214,7 +210,6 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         panel.setBackground(COLOR_GRAY_BG);
         panel.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        // LADO IZQUIERDO: Formulario de Orden
         JPanel pnlIzquierdo = new JPanel();
         pnlIzquierdo.setLayout(new BoxLayout(pnlIzquierdo, BoxLayout.Y_AXIS));
         pnlIzquierdo.setOpaque(false);
@@ -271,7 +266,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         pnlIzquierdo.add(pnlPlatos);
         pnlIzquierdo.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // 3. Atajos Prototype y Memento
+        // 3. Atajos
         JPanel pnlAtajos = crearPanelTarjeta("3. Operaciones Rapidas [Prototype & Memento]");
         pnlAtajos.setLayout(new GridLayout(1, 3, 8, 8));
 
@@ -294,7 +289,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
         panel.add(pnlIzquierdo, BorderLayout.WEST);
 
-        // LADO DERECHO: Carrito, Totales y Confirmacion
+        // LADO DERECHO: Carrito y Totales
         JPanel pnlDerecho = crearPanelTarjeta("Detalle del Pedido Actual (Carrito)");
         pnlDerecho.setLayout(new BorderLayout(10, 10));
 
@@ -306,11 +301,9 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         tblCarrito.setRowHeight(28);
         pnlDerecho.add(new JScrollPane(tblCarrito), BorderLayout.CENTER);
 
-        // Panel Inferior de Pago y Total
         JPanel pnlPagoTotal = new JPanel(new BorderLayout(10, 10));
         pnlPagoTotal.setOpaque(false);
 
-        // Metodo de Pago
         JPanel pnlFormaPago = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
         pnlFormaPago.setBorder(new TitledBorder("Metodo de Pago [Adapter]"));
         pnlFormaPago.setOpaque(false);
@@ -327,9 +320,16 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         btnQuitar.addActionListener(e -> accionQuitarItemCarrito());
         pnlFormaPago.add(btnQuitar);
 
+        JButton btnVaciarCarrito = crearBotonEstilizado("Limpiar Carrito", new Color(148, 163, 184), Color.BLACK, 28);
+        btnVaciarCarrito.addActionListener(e -> {
+            carritoItems.clear();
+            modeloCarrito.setRowCount(0);
+            recalcularTotales();
+        });
+        pnlFormaPago.add(btnVaciarCarrito);
+
         pnlPagoTotal.add(pnlFormaPago, BorderLayout.NORTH);
 
-        // Tarjeta de Totales
         JPanel pnlTotales = new JPanel(new GridLayout(3, 2, 4, 4));
         pnlTotales.setBackground(new Color(241, 245, 249));
         pnlTotales.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(10, 16, 10, 16)));
@@ -356,7 +356,6 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
         pnlPagoTotal.add(pnlTotales, BorderLayout.CENTER);
 
-        // BOTON CONFIRMAR GIGANTE Y VISIBLE (Solucion definitiva a la visibilidad)
         JButton btnConfirmar = crearBotonEstilizado("CONFIRMAR Y GUARDAR PEDIDO (Guardar en LocalStorage)", COLOR_GREEN, Color.WHITE, 48);
         btnConfirmar.setFont(new Font("Segoe UI", Font.BOLD, 15));
         btnConfirmar.addActionListener(e -> accionConfirmarYGuardarPedido());
@@ -423,9 +422,9 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
         panel.add(new JScrollPane(tblPedidosKDS), BorderLayout.CENTER);
 
-        // Botonera de Control de Estado
+        // Botonera de Control de Estado y Limpieza
         JPanel pnlAcciones = crearPanelTarjeta("Control del Ciclo de Vida del Pedido [State / Command / Observer]");
-        pnlAcciones.setLayout(new GridLayout(1, 5, 10, 10));
+        pnlAcciones.setLayout(new GridLayout(1, 6, 8, 8));
 
         JButton btnCocina = crearBotonEstilizado("1. Pasar a Cocina", COLOR_BLUE, Color.WHITE, 40);
         btnCocina.addActionListener(e -> cambiarEstadoPedidoSeleccionado("EN_COCINA"));
@@ -436,17 +435,30 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         JButton btnEntregar = crearBotonEstilizado("3. Entregar", COLOR_GREEN, Color.WHITE, 40);
         btnEntregar.addActionListener(e -> cambiarEstadoPedidoSeleccionado("ENTREGADO"));
 
-        JButton btnCancelar = crearBotonEstilizado("4. Cancelar Pedido", COLOR_RED, Color.WHITE, 40);
+        JButton btnCancelar = crearBotonEstilizado("4. Cancelar", COLOR_RED, Color.WHITE, 40);
         btnCancelar.addActionListener(e -> cambiarEstadoPedidoSeleccionado("CANCELADO"));
 
         JButton btnRecargar = crearBotonEstilizado("Recargar Lista", new Color(71, 85, 105), Color.WHITE, 40);
         btnRecargar.addActionListener(e -> cargarDatosDesdeLocalStorage());
+
+        // Boton para Limpiar los Registros
+        JButton btnLimpiarKDS = crearBotonEstilizado("Vaciar Historial", new Color(185, 28, 28), Color.WHITE, 40);
+        btnLimpiarKDS.setToolTipText("Borra todos los pedidos almacenados en LocalStorage");
+        btnLimpiarKDS.addActionListener(e -> {
+            int rpta = JOptionPane.showConfirmDialog(this, "¿Esta seguro de vaciar todos los pedidos guardados en LocalStorage?", "Confirmar Vaciado", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (rpta == JOptionPane.YES_OPTION) {
+                storageDB.limpiarTodosLosPedidos();
+                cargarDatosDesdeLocalStorage();
+                lblEstadoKDS.setText("Historial de pedidos vaciado exitosamente.");
+            }
+        });
 
         pnlAcciones.add(btnCocina);
         pnlAcciones.add(btnListo);
         pnlAcciones.add(btnEntregar);
         pnlAcciones.add(btnCancelar);
         pnlAcciones.add(btnRecargar);
+        pnlAcciones.add(btnLimpiarKDS);
 
         panel.add(pnlAcciones, BorderLayout.SOUTH);
         return panel;
@@ -525,45 +537,61 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     }
 
     // =========================================================================
-    // PESTANA 4: AUDITORIA DE PATRONES
+    // PESTANA 4: INSPECTOR VISUAL DE PATRONES GOF & CONSOLA
     // =========================================================================
     private JPanel crearPestanaAuditoria() {
-        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
         panel.setBackground(COLOR_GRAY_BG);
         panel.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        JPanel pnlGrid = crearPanelTarjeta("Matriz de los 15 Patrones de Diseno GOF (Verificados)");
-        pnlGrid.setLayout(new GridLayout(3, 5, 8, 8));
+        // TABLA VISUAL DE LOS 15 PATRONES (Muestra de manera elegante cada patron)
+        JPanel pnlTablaPatrones = crearPanelTarjeta("Matriz Visual de los 15 Patrones de Diseno GOF (Verificacion Academica UTP)");
+        pnlTablaPatrones.setLayout(new BorderLayout(6, 6));
 
-        String[] nombresPatrones = {
-            "1. Singleton (ConexionDB)",
-            "2. Abstract Factory (Canales)",
-            "3. Factory Method (Pedidos)",
-            "4. Prototype (Plantillas)",
-            "5. Composite (Combos)",
-            "6. Decorator (Extras/Queso)",
-            "7. Builder (PedidoBuilder)",
-            "8. Proxy (Seguridad Almacen)",
-            "9. Memento (Undo/Snapshot)",
-            "10. Adapter (Yape/Tarjeta)",
-            "11. Bridge (Notificaciones)",
-            "12. Command (Ordenes Cocina)",
-            "13. State (Ciclo de Vida)",
-            "14. Observer (Monitores GPS)",
-            "15. Facade (Fachada Maestra)"
+        modeloTablaPatrones = new DefaultTableModel(new String[]{
+            "#", "Patron GOF", "Tipo / Categoria", "Integrante Responsable", "Clase Principal", "Estado"
+        }, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) { return false; }
         };
 
-        for (String p : nombresPatrones) {
-            JCheckBox chk = new JCheckBox(p, true);
-            chk.setEnabled(false);
-            chk.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            chk.setForeground(new Color(22, 101, 52));
-            chk.setOpaque(false);
-            pnlGrid.add(chk);
-        }
-        panel.add(pnlGrid, BorderLayout.NORTH);
+        // Llenar los 15 patrones
+        modeloTablaPatrones.addRow(new Object[]{"1", "Singleton", "Creacional", "Lincoln Vega Hidalgo", "ConexionDB", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"2", "Abstract Factory", "Creacional", "Zoe Mendoza Lalopu", "IServiciosCanalFactory", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"3", "Factory Method", "Creacional", "Zoe Mendoza Lalopu", "PedidoFactory", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"4", "Prototype", "Creacional", "Leonardo Garay Llaja", "CatalogoPlantillas", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"5", "Builder", "Creacional", "Leonardo Garay Llaja", "PedidoBuilder", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"6", "Composite", "Estructural", "Maria Isabel Ruiz", "ComboMenuComposite", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"7", "Decorator", "Estructural", "Maria Isabel Ruiz", "ExtraQuesoDecorator", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"8", "Adapter", "Estructural", "Chris Grimaldo Cuya", "YapePaymentAdapter", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"9", "Bridge", "Estructural", "Chris Grimaldo Cuya", "NotificacionPedidoListo", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"10", "Proxy", "Estructural", "Jairo Mejia Huerta", "AlmacenProxySeguro", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"11", "Facade", "Estructural", "Lincoln Vega Hidalgo", "RestauranteFacade", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"12", "State", "Comportamiento", "Etxin Malvas Basilio", "IEstadoPedido (4 Fases)", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"13", "Observer", "Comportamiento", "Etxin Malvas Basilio", "Monitores Cocina/GPS", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"14", "Command", "Comportamiento", "Etxin Malvas Basilio", "EnviarCocinaCommand", "INTEGRADO Y ACTIVO"});
+        modeloTablaPatrones.addRow(new Object[]{"15", "Memento", "Comportamiento", "Jairo Mejia Huerta", "PedidoMemento (Undo)", "INTEGRADO Y ACTIVO"});
 
-        JPanel pnlLogs = crearPanelTarjeta("Trazabilidad y Salida Tecnica en Tiempo Real");
+        tblPatrones = new JTable(modeloTablaPatrones);
+        tblPatrones.setRowHeight(25);
+        tblPatrones.getColumnModel().getColumn(0).setPreferredWidth(35);
+        tblPatrones.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                c.setForeground(new Color(22, 163, 74));
+                c.setFont(c.getFont().deriveFont(Font.BOLD));
+                return c;
+            }
+        });
+
+        JScrollPane scrollTablaPatrones = new JScrollPane(tblPatrones);
+        scrollTablaPatrones.setPreferredSize(new Dimension(800, 200));
+        pnlTablaPatrones.add(scrollTablaPatrones, BorderLayout.CENTER);
+        panel.add(pnlTablaPatrones, BorderLayout.NORTH);
+
+        // Consola de Salida Limpia
+        JPanel pnlLogs = crearPanelTarjeta("Salida Tecnica Ordenada de la Fachada (Sin Caracteres Rotos)");
         pnlLogs.setLayout(new BorderLayout(8, 8));
 
         txtConsolaLogs = new JTextArea();

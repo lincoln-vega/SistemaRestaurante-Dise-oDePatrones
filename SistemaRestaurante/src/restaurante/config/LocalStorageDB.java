@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Servicio de Persistencia Local (LocalStorage / Simulación de BD sin servidor externo).
- * Permite almacenar, consultar y actualizar pedidos e inventario en un archivo JSON local,
- * sirviendo como capa de persistencia desacoplada previa a la migración a MySQL real.
+ * Servicio de Persistencia Local (LocalStorage / Simulacion de BD sin servidor externo).
+ * Permite almacenar, consultar, actualizar y vaciar pedidos en un archivo JSON local,
+ * sirviendo como capa de persistencia desacoplada previa a la migracion a MySQL real.
  * Responsable: Lincoln Vega Hidalgo
  */
 public class LocalStorageDB {
@@ -98,7 +98,6 @@ public class LocalStorageDB {
 
     public synchronized void guardarPedido(String id, String cliente, String canal, String items, double total, String pago, String estado) {
         List<RegistroPedidoLocalStorage> lista = listarPedidos();
-        // Evitar duplicados por id
         lista.removeIf(p -> p.getId().equalsIgnoreCase(id));
         lista.add(new RegistroPedidoLocalStorage(id, cliente, canal, items, total, pago, estado));
         guardarLista(lista);
@@ -112,6 +111,17 @@ public class LocalStorageDB {
                 break;
             }
         }
+        guardarLista(lista);
+    }
+
+    public synchronized void limpiarTodosLosPedidos() {
+        escribirArchivo("[]");
+        System.out.println("[LOCALSTORAGE] Historial de pedidos vaciado por el usuario.");
+    }
+
+    public synchronized void eliminarPedido(String id) {
+        List<RegistroPedidoLocalStorage> lista = listarPedidos();
+        lista.removeIf(p -> p.getId().equalsIgnoreCase(id));
         guardarLista(lista);
     }
 
@@ -148,9 +158,6 @@ public class LocalStorageDB {
         }
     }
 
-    /**
-     * DTO para representación del pedido almacenado localmente.
-     */
     public static class RegistroPedidoLocalStorage {
         private String id;
         private String cliente;

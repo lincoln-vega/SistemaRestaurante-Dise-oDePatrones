@@ -4,7 +4,7 @@ import restaurante.core.interfaces.IComponenteMenu;
 
 /**
  * Decorador Concreto: Sin Cebolla
- * Modifica la especificación del plato sin costo adicional (+ S/ 0.00).
+ * Modifica la especificacion del plato sin costo adicional (+ S/ 0.00).
  * Responsable: Maria Isabel Ruiz Vasquez
  */
 public class SinCebollaDecorator extends PlatoDecorator {
@@ -20,12 +20,12 @@ public class SinCebollaDecorator extends PlatoDecorator {
 
     @Override
     public double getPrecio() {
-        return super.getPrecio(); // Sin costo adicional
+        return super.getPrecio();
     }
 
     @Override
     public void mostrarDetalle(String indent) {
         super.mostrarDetalle(indent);
-        System.out.println(indent + "   🧅 [DECORATOR]: Indicación especial (Sin Cebolla) (+ S/ 0.00)");
+        System.out.println(indent + "   [DECORATOR]: Indicacion especial (Sin Cebolla) (+ S/ 0.00)");
     }
 }

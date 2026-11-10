@@ -3,8 +3,8 @@ package restaurante.patterns.structural.decorator;
 import restaurante.core.interfaces.IComponenteMenu;
 
 /**
- * Decorador Concreto: Porción de Papas Extra
- * Agrega una porción adicional de papas fritas aumentando su costo en S/ 4.50.
+ * Decorador Concreto: Porcion de Papas Extra
+ * Agrega una porcion adicional de papas fritas aumentando su costo en S/ 4.50.
  * Responsable: Maria Isabel Ruiz Vasquez
  */
 public class PorcionPapasExtraDecorator extends PlatoDecorator {
@@ -16,7 +16,7 @@ public class PorcionPapasExtraDecorator extends PlatoDecorator {
 
     @Override
     public String getNombre() {
-        return super.getNombre() + " [Porción Papas Extra]";
+        return super.getNombre() + " [Porcion Papas Extra]";
     }
 
     @Override
@@ -27,6 +27,6 @@ public class PorcionPapasExtraDecorator extends PlatoDecorator {
     @Override
     public void mostrarDetalle(String indent) {
         super.mostrarDetalle(indent);
-        System.out.println(indent + "   🍟 [DECORATOR]: Porción Papas Extra (+ S/ " + String.format("%.2f", PRECIO_EXTRA) + ")");
+        System.out.println(indent + "   [DECORATOR]: Porcion Papas Extra (+ S/ " + String.format("%.2f", PRECIO_EXTRA) + ")");
     }
 }
