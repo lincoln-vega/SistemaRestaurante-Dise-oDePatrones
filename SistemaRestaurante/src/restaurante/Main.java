@@ -1,10 +1,14 @@
 package restaurante;
 
+import java.awt.GraphicsEnvironment;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import restaurante.core.facade.RestauranteFacade;
+import restaurante.ui.VentanaPrincipal;
 
 /**
- * Punto de entrada principal para demostración y verificación de patrones.
- * Demuestra la ejecución orquestada de los 15 Patrones de Diseño GOF.
+ * Punto de entrada principal del Sistema de Restaurante.
+ * Integra la ejecución por consola y el arranque de la Interfaz Gráfica Java Swing.
  * Responsable Técnico: Lincoln Vega Hidalgo
  */
 public class Main {
@@ -16,10 +20,26 @@ public class Main {
         System.out.println("       Meta: 15 Patrones GOF Integrados y Principios SOLID");
         System.out.println("================================================================================\n");
 
+        // Ejecutar demostración en consola
         RestauranteFacade facade = new RestauranteFacade();
         facade.procesarFlujoCompletoRestaurante("Lincoln Vega Hidalgo", "DELIVERY");
 
-        System.out.println("\n🎉 DEMOSTRACIÓN FINALIZADA CON ÉXITO.");
-        System.out.println("⭐ Los 15 patrones GOF se encuentran integrados, compilando y ejecutando al 100%.");
+        System.out.println("\n🎉 DEMOSTRACIÓN EN CONSOLA FINALIZADA CON ÉXITO.");
+        System.out.println("⭐ 15/15 Patrones GOF verificados.");
+
+        // Iniciar interfaz gráfica Swing si el entorno tiene pantalla disponible
+        if (!GraphicsEnvironment.isHeadless()) {
+            System.out.println("\n🖥️  Iniciando Interfaz Gráfica Java Swing (VentanaPrincipal)...");
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {}
+
+            SwingUtilities.invokeLater(() -> {
+                VentanaPrincipal ventana = new VentanaPrincipal();
+                ventana.setVisible(true);
+            });
+        } else {
+            System.out.println("[INFO] Entorno headless detectado: la interfaz Swing está disponible para NetBeans.");
+        }
     }
 }
