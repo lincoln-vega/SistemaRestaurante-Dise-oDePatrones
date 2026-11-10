@@ -1,0 +1,10 @@
+# NetBeans build output
+build/
+dist/
+nbproject/private/
+
+# Compiled class file
+*.class
+
+# Log file
+*.log

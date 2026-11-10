@@ -11,6 +11,7 @@ public class ListoState implements IEstadoPedido {
 
     @Override
     public void siguienteEstado(Pedido pedido) {
+        pedido.setEstadoActual(new EntregadoState());
         System.out.println("[STATE] Pedido entregado al cliente / repartidor. Ciclo completado.");
         pedido.notificarObservadores("LISTO", "ENTREGADO", "Pedido entregado con satisfacción.");
     }

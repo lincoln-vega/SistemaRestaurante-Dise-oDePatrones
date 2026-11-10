@@ -7,10 +7,11 @@ import restaurante.core.interfaces.IEstadoPedido;
 import restaurante.core.interfaces.IObservadorPedido;
 import restaurante.core.interfaces.IPago;
 import restaurante.core.interfaces.IPrototipo;
+import restaurante.patterns.behavioral.memento.PedidoMemento;
 
 /**
  * Entidad central del negocio.
- * Encapsula la información del pedido y sirve de contexto para State, Observer, Builder y Prototype.
+ * Encapsula la información del pedido y sirve de contexto para State, Observer, Builder, Prototype y Memento.
  */
 public class Pedido implements IPrototipo<Pedido> {
     private String idPedido;
@@ -65,12 +66,25 @@ public class Pedido implements IPrototipo<Pedido> {
         }
     }
 
+    // Memento: Originator methods
+    public PedidoMemento guardarMemento() {
+        return new PedidoMemento(this.idPedido, this.items, this.notasCocina);
+    }
+
+    public void restaurarMemento(PedidoMemento memento) {
+        if (memento != null) {
+            this.items = new ArrayList<>(memento.getItemsSnapshot());
+            this.notasCocina = memento.getNotasCocinaSnapshot();
+            System.out.println("[MEMENTO] Pedido #" + this.idPedido + " restaurado a su estado previo.");
+        }
+    }
+
     // Prototype implementation (deep-ish clone)
     @Override
     public Pedido clonar() {
-        Pedido copia = new Pedido("CLON-" + System.currentTimeMillis() % 10000, this.cliente, this.canalVenta);
+        Pedido copia = new Pedido("CLON-" + (System.currentTimeMillis() % 10000), this.cliente, this.canalVenta);
         copia.setNotasCocina(this.notasCocina);
-        copia.items.addAll(this.items);
+        copia.items = new ArrayList<>(this.items);
         return copia;
     }
 
