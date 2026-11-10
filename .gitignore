@@ -8,3 +8,7 @@ nbproject/private/
 
 # Log file
 *.log
+
+# LocalStorage data
+localstorage_restaurante.json
+*.json.bak
