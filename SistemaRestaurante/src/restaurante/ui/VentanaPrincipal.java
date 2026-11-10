@@ -6,7 +6,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -26,17 +28,8 @@ import restaurante.patterns.behavioral.memento.PedidoMemento;
 import restaurante.patterns.behavioral.observer.CajaMonitorObserver;
 import restaurante.patterns.behavioral.observer.CocinaMonitorObserver;
 import restaurante.patterns.behavioral.observer.DeliveryRastreadorObserver;
-import restaurante.patterns.behavioral.state.EnCocinaState;
-import restaurante.patterns.behavioral.state.EntregadoState;
-import restaurante.patterns.behavioral.state.ListoState;
 import restaurante.patterns.behavioral.state.RegistradoState;
-import restaurante.patterns.creational.abstractfactory.IServiciosCanalFactory;
-import restaurante.patterns.creational.abstractfactory.ServiciosDeliveryFactory;
-import restaurante.patterns.creational.abstractfactory.ServiciosSalonFactory;
 import restaurante.patterns.creational.builder.PedidoBuilder;
-import restaurante.patterns.creational.factorymethod.PedidoDeliveryFactory;
-import restaurante.patterns.creational.factorymethod.PedidoFactory;
-import restaurante.patterns.creational.factorymethod.PedidoSalonFactory;
 import restaurante.patterns.creational.prototype.CatalogoPlantillas;
 import restaurante.patterns.structural.adapter.TarjetaPaymentAdapter;
 import restaurante.patterns.structural.adapter.YapePaymentAdapter;
@@ -51,14 +44,24 @@ import restaurante.patterns.structural.decorator.SinCebollaDecorator;
 import restaurante.patterns.structural.proxy.AlmacenProxySeguro;
 
 /**
- * Interfaz Gráfica Profesional - Sistema de Restaurante Gourmet POS
- * Integra persistencia LocalStorage (JSON), gestión interactiva de pedidos en tiempo real
- * y demostración práctica de los 15 Patrones de Diseño GOF.
- * Responsable Técnico: Lincoln Vega Hidalgo
+ * Interfaz Grafica Moderna e Intuitiva - Gourmet Restaurant POS
+ * Botones con alto contraste visual (anti-aliasing personalizado),
+ * persistencia LocalStorage (JSON) y demostracion practica de los 15 Patrones GOF.
+ * Responsable Tecnico: Lincoln Vega Hidalgo
  */
 public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
-    // Capa de Negocio y Patrones
+    // Paleta de Colores Moderna (Tailwind-inspired)
+    private static final Color COLOR_PRIMARY = new Color(26, 54, 93);       // Navy profundo
+    private static final Color COLOR_GREEN = new Color(22, 163, 74);        // Verde esmeralda para confirmar
+    private static final Color COLOR_BLUE = new Color(37, 99, 235);         // Azul accion
+    private static final Color COLOR_AMBER = new Color(217, 119, 6);        // Ambar para estados
+    private static final Color COLOR_RED = new Color(220, 38, 38);          // Rojo cancelar
+    private static final Color COLOR_GRAY_BG = new Color(248, 250, 252);    // Fondo suave
+    private static final Color COLOR_CARD_BG = new Color(255, 255, 255);    // Tarjetas blancas
+    private static final Color COLOR_BORDER = new Color(226, 232, 240);     // Bordes sutiles
+
+    // Negocio y Patrones
     private LocalStorageDB storageDB;
     private RestauranteFacade facade;
     private CatalogoPlantillas catalogoPlantillas;
@@ -66,7 +69,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     private GestorComandosRestaurante gestorComandos;
     private AlmacenProxySeguro proxyAlmacen;
 
-    // Componentes - Pestaña 1 (Punto de Venta / Carrito)
+    // Componentes - POS
     private JTextField txtCliente;
     private JComboBox<String> cmbCanal;
     private JTextField txtDetalleCanal;
@@ -85,22 +88,21 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     private List<IComponenteMenu> carritoItems;
     private PedidoMemento snapshotBorrador;
 
-    // Componentes - Pestaña 2 (Cocina & KDS)
+    // Componentes - KDS
     private DefaultTableModel modeloPedidosKDS;
     private JTable tblPedidosKDS;
     private JLabel lblEstadoKDS;
 
-    // Componentes - Pestaña 3 (Almacén e Inventario - Proxy)
+    // Componentes - Almacen
     private JComboBox<String> cmbRolAlmacen;
     private DefaultTableModel modeloInventario;
     private JTable tblInventario;
 
-    // Componentes - Pestaña 4 (Auditoría & Consola)
+    // Componentes - Auditoria
     private JTextArea txtConsolaLogs;
-    private JCheckBox[] chkPatronesVerificados;
 
     public VentanaPrincipal() {
-        super("Restaurante Gourmet POS - 15 Patrones de Diseño (Avance 50% UTP)");
+        super("Gourmet Manager POS - Sistema de Restaurante (Avance 50% UTP)");
         inicializarNegocio();
         configurarVentana();
         crearInterfazGrafica();
@@ -125,26 +127,59 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
     private void configurarVentana() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1240, 840);
-        setMinimumSize(new Dimension(1050, 720));
+        setSize(1260, 860);
+        setMinimumSize(new Dimension(1080, 740));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+    }
+
+    /**
+     * Fabrica de botones personalizados de alto contraste.
+     * Evita el fallo de renderizado blanco sobre blanco de Windows LookAndFeel.
+     */
+    public static JButton crearBotonEstilizado(String texto, Color bg, Color fg, int altura) {
+        JButton btn = new JButton(texto) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(bg.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(bg.brighter());
+                } else {
+                    g2.setColor(bg);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setOpaque(false);
+        btn.setForeground(fg);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width, altura));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
     }
 
     private void crearInterfazGrafica() {
         // --- HEADER PRINCIPAL ---
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(new Color(24, 43, 73));
-        header.setBorder(new EmptyBorder(12, 20, 12, 20));
+        header.setBackground(COLOR_PRIMARY);
+        header.setBorder(new EmptyBorder(14, 24, 14, 24));
 
-        JPanel pnlTitulos = new JPanel(new GridLayout(2, 1, 2, 2));
+        JPanel pnlTitulos = new JPanel(new GridLayout(2, 1, 3, 3));
         pnlTitulos.setOpaque(false);
 
-        JLabel lblTitulo = new JLabel("🍽️ GOURMET RESTAURANT MANAGER • SISTEMA INTEGRAL POS");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        JLabel lblTitulo = new JLabel("GOURMET RESTAURANT MANAGER • SISTEMA INTEGRAL POS");
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 19));
         lblTitulo.setForeground(Color.WHITE);
 
-        JLabel lblSub = new JLabel("UTP | Diseño de Patrones (Semana 14 - Avance 50%) | Líder Técnico: Lincoln Vega Hidalgo");
+        JLabel lblSub = new JLabel("UTP | Diseno de Patrones (Semana 14 - Avance 50%) | Lider Tecnico: Lincoln Vega Hidalgo");
         lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblSub.setForeground(new Color(203, 213, 225));
 
@@ -152,41 +187,43 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         pnlTitulos.add(lblSub);
         header.add(pnlTitulos, BorderLayout.WEST);
 
-        JLabel lblStorageBadge = new JLabel("💾 Persistencia: LocalStorage JSON (Modo Simulado de BD)");
+        JLabel lblStorageBadge = new JLabel("[BD] Persistencia: LocalStorage JSON (Modo Offline)");
         lblStorageBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblStorageBadge.setForeground(new Color(134, 239, 172));
         header.add(lblStorageBadge, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
 
-        // --- SISTEMA DE PESTAÑAS (TABBED PANE) ---
+        // --- SISTEMA DE PESTANAS (TABBED PANE) ---
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-        tabs.addTab("🛒 Punto de Venta (POS)", crearPestanaPOS());
-        tabs.addTab("👨‍🍳 Cocina & Pedidos Activos (KDS)", crearPestanaKDS());
-        tabs.addTab("📦 Inventario & Stock (Proxy)", crearPestanaAlmacen());
-        tabs.addTab("🧠 Inspector de Patrones GOF", crearPestanaAuditoria());
+        tabs.addTab("PUNTO DE VENTA (POS)", crearPestanaPOS());
+        tabs.addTab("COCINA Y PEDIDOS ACTIVOS (KDS)", crearPestanaKDS());
+        tabs.addTab("INVENTARIO Y ALMACEN (PROXY)", crearPestanaAlmacen());
+        tabs.addTab("INSPECTOR DE PATRONES GOF", crearPestanaAuditoria());
 
         add(tabs, BorderLayout.CENTER);
     }
 
     // =========================================================================
-    // PESTAÑA 1: PUNTO DE VENTA (TOMA DE PEDIDOS)
+    // PESTANA 1: PUNTO DE VENTA (POS)
     // =========================================================================
     private JPanel crearPestanaPOS() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(12, 15, 12, 15));
+        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        panel.setBackground(COLOR_GRAY_BG);
+        panel.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        // SPLIT: Lado Izquierdo (Selección) vs Lado Derecho (Carrito & Totales)
+        // LADO IZQUIERDO: Formulario de Orden
         JPanel pnlIzquierdo = new JPanel();
         pnlIzquierdo.setLayout(new BoxLayout(pnlIzquierdo, BoxLayout.Y_AXIS));
-        pnlIzquierdo.setPreferredSize(new Dimension(540, 600));
+        pnlIzquierdo.setOpaque(false);
+        pnlIzquierdo.setPreferredSize(new Dimension(530, 600));
 
-        // 1. Datos del Cliente y Canal
-        JPanel pnlCliente = new JPanel(new GridLayout(3, 2, 8, 8));
-        pnlCliente.setBorder(new TitledBorder("1. Datos del Cliente & Canal [Factory Method / Abstract Factory]"));
-        pnlCliente.add(new JLabel("Cliente:"));
+        // 1. Cliente y Canal
+        JPanel pnlCliente = crearPanelTarjeta("1. Informacion del Cliente y Canal de Atencion");
+        pnlCliente.setLayout(new GridLayout(3, 2, 8, 8));
+        pnlCliente.add(new JLabel("Nombre Cliente:"));
         txtCliente = new JTextField("Lincoln Vega Hidalgo");
         pnlCliente.add(txtCliente);
 
@@ -195,30 +232,31 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         cmbCanal.addActionListener(e -> actualizarDetalleCanal());
         pnlCliente.add(cmbCanal);
 
-        pnlCliente.add(new JLabel("Dirección / Mesa:"));
+        pnlCliente.add(new JLabel("Direccion / Mesa:"));
         txtDetalleCanal = new JTextField("Av. Central 456, Lima");
         pnlCliente.add(txtDetalleCanal);
         pnlIzquierdo.add(pnlCliente);
-        pnlIzquierdo.add(Box.createRigidArea(new Dimension(0, 8)));
+        pnlIzquierdo.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // 2. Selección de Platos y Decoradores
-        JPanel pnlPlatos = new JPanel(new GridLayout(6, 1, 4, 4));
-        pnlPlatos.setBorder(new TitledBorder("2. Menú y Adicionales [Composite & Decorator]"));
+        // 2. Platos y Adicionales
+        JPanel pnlPlatos = crearPanelTarjeta("2. Seleccion de Menus y Adicionales [Decorator / Composite]");
+        pnlPlatos.setLayout(new GridLayout(6, 1, 6, 6));
 
-        JPanel pnlComboPlato = new JPanel(new BorderLayout(6, 6));
-        pnlComboPlato.add(new JLabel("Plato Principal:"), BorderLayout.WEST);
+        JPanel pnlPlatoCombo = new JPanel(new BorderLayout(8, 8));
+        pnlPlatoCombo.setOpaque(false);
+        pnlPlatoCombo.add(new JLabel("Plato:"), BorderLayout.WEST);
         cmbPlatos = new JComboBox<>(new String[]{
-            "Hamburguesa Artesanal Clásica - S/ 22.00",
+            "Hamburguesa Artesanal Clasica - S/ 22.00",
             "Pollo a la Brasa (1/4 Personal) - S/ 24.50",
             "Lomo Saltado Criollo Gourmet - S/ 28.00"
         });
-        pnlComboPlato.add(cmbPlatos, BorderLayout.CENTER);
-        pnlPlatos.add(pnlComboPlato);
+        pnlPlatoCombo.add(cmbPlatos, BorderLayout.CENTER);
+        pnlPlatos.add(pnlPlatoCombo);
 
-        chkQueso = new JCheckBox("🧀 Extra Queso Cheddar (+ S/ 3.00) [ExtraQuesoDecorator]");
-        chkPapas = new JCheckBox("🍟 Porción Papas Extra (+ S/ 4.50) [PorcionPapasExtraDecorator]");
-        chkSinCebolla = new JCheckBox("🧅 Indicación: Sin Cebolla (S/ 0.00) [SinCebollaDecorator]");
-        chkCombo = new JCheckBox("📦 Convertir en Combo Dúo (Incluye Chicha Morada S/ 6.00 y 10% Desc.) [Composite]");
+        chkQueso = new JCheckBox("(+) Extra Queso Cheddar (+ S/ 3.00) [Decorator]");
+        chkPapas = new JCheckBox("(+) Porcion Papas Fritas Extra (+ S/ 4.50) [Decorator]");
+        chkSinCebolla = new JCheckBox("(*) Indicacion Especial: Sin Cebolla (S/ 0.00) [Decorator]");
+        chkCombo = new JCheckBox("[Combo] Convertir en Combo Duo (+ Chicha Morada S/ 6.00 y 10% Desc.) [Composite]");
         chkCombo.setSelected(true);
 
         pnlPlatos.add(chkQueso);
@@ -226,83 +264,82 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         pnlPlatos.add(chkSinCebolla);
         pnlPlatos.add(chkCombo);
 
-        JButton btnAgregarItem = new JButton("➕ AGREGAR AL CARRITO");
-        btnAgregarItem.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnAgregarItem.setBackground(new Color(224, 231, 255));
-        btnAgregarItem.addActionListener(e -> accionAgregarAlCarrito());
-        pnlPlatos.add(btnAgregarItem);
+        JButton btnAgregar = crearBotonEstilizado("[+] AGREGAR AL CARRITO", new Color(30, 58, 138), Color.WHITE, 36);
+        btnAgregar.addActionListener(e -> accionAgregarAlCarrito());
+        pnlPlatos.add(btnAgregar);
 
         pnlIzquierdo.add(pnlPlatos);
-        pnlIzquierdo.add(Box.createRigidArea(new Dimension(0, 8)));
+        pnlIzquierdo.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // 3. Prototipos & Historial (Memento / Prototype)
-        JPanel pnlHerramientas = new JPanel(new GridLayout(1, 3, 6, 6));
-        pnlHerramientas.setBorder(new TitledBorder("3. Herramientas Rápidas [Prototype & Memento]"));
+        // 3. Atajos Prototype y Memento
+        JPanel pnlAtajos = crearPanelTarjeta("3. Operaciones Rapidas [Prototype & Memento]");
+        pnlAtajos.setLayout(new GridLayout(1, 3, 8, 8));
 
-        JButton btnProto = new JButton("📋 Clonar Plantilla");
-        btnProto.setToolTipText("Patrón Prototype: Clona pedido preconfigurado");
+        JButton btnProto = crearBotonEstilizado("Clonar Plantilla", new Color(71, 85, 105), Color.WHITE, 34);
+        btnProto.setToolTipText("Patron Prototype: Clona pedido base");
         btnProto.addActionListener(e -> accionClonarPlantilla());
 
-        JButton btnSnapshot = new JButton("💾 Snapshot");
-        btnSnapshot.setToolTipText("Patrón Memento: Guarda estado del borrador");
+        JButton btnSnapshot = crearBotonEstilizado("Snapshot", new Color(71, 85, 105), Color.WHITE, 34);
+        btnSnapshot.setToolTipText("Patron Memento: Guarda estado actual");
         btnSnapshot.addActionListener(e -> accionGuardarBorrador());
 
-        JButton btnUndo = new JButton("↩️ Deshacer");
-        btnUndo.setToolTipText("Patrón Memento: Revierte al estado previo");
+        JButton btnUndo = crearBotonEstilizado("Deshacer", new Color(148, 163, 184), new Color(15, 23, 42), 34);
+        btnUndo.setToolTipText("Patron Memento: Revierte el ultimo cambio");
         btnUndo.addActionListener(e -> accionRestaurarBorrador());
 
-        pnlHerramientas.add(btnProto);
-        pnlHerramientas.add(btnSnapshot);
-        pnlHerramientas.add(btnUndo);
-        pnlIzquierdo.add(pnlHerramientas);
+        pnlAtajos.add(btnProto);
+        pnlAtajos.add(btnSnapshot);
+        pnlAtajos.add(btnUndo);
+        pnlIzquierdo.add(pnlAtajos);
 
         panel.add(pnlIzquierdo, BorderLayout.WEST);
 
-        // LADO DERECHO: Carrito, Métodos de Pago y Confirmación
-        JPanel pnlDerecho = new JPanel(new BorderLayout(8, 8));
-        pnlDerecho.setBorder(new TitledBorder("Detalle del Pedido Actual (Carrito)"));
+        // LADO DERECHO: Carrito, Totales y Confirmacion
+        JPanel pnlDerecho = crearPanelTarjeta("Detalle del Pedido Actual (Carrito)");
+        pnlDerecho.setLayout(new BorderLayout(10, 10));
 
-        // Tabla del Carrito
-        modeloCarrito = new DefaultTableModel(new String[]{"Ítem / Plato", "Detalles & Extras", "Subtotal"}, 0) {
+        modeloCarrito = new DefaultTableModel(new String[]{"Item / Plato", "Detalles y Adicionales", "Subtotal"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
         tblCarrito = new JTable(modeloCarrito);
-        tblCarrito.setRowHeight(26);
+        tblCarrito.setRowHeight(28);
         pnlDerecho.add(new JScrollPane(tblCarrito), BorderLayout.CENTER);
 
         // Panel Inferior de Pago y Total
         JPanel pnlPagoTotal = new JPanel(new BorderLayout(10, 10));
-        pnlPagoTotal.setBorder(new EmptyBorder(8, 8, 8, 8));
+        pnlPagoTotal.setOpaque(false);
 
-        // Selector de Pago (Adapter)
-        JPanel pnlFormaPago = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-        pnlFormaPago.setBorder(new TitledBorder("Método de Pago [Adapter]"));
-        rbtnYape = new JRadioButton("📱 Yape (BCP)", true);
-        rbtnTarjeta = new JRadioButton("💳 Tarjeta Visa/Mastercard", false);
+        // Metodo de Pago
+        JPanel pnlFormaPago = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
+        pnlFormaPago.setBorder(new TitledBorder("Metodo de Pago [Adapter]"));
+        pnlFormaPago.setOpaque(false);
+
+        rbtnYape = new JRadioButton("Yape (BCP)", true);
+        rbtnTarjeta = new JRadioButton("Tarjeta Visa/Mastercard", false);
         ButtonGroup bg = new ButtonGroup();
         bg.add(rbtnYape);
         bg.add(rbtnTarjeta);
         pnlFormaPago.add(rbtnYape);
         pnlFormaPago.add(rbtnTarjeta);
 
-        JButton btnQuitarItem = new JButton("🗑️ Quitar Ítem");
-        btnQuitarItem.addActionListener(e -> accionQuitarItemCarrito());
-        pnlFormaPago.add(btnQuitarItem);
+        JButton btnQuitar = crearBotonEstilizado("[-] Quitar Item", new Color(239, 68, 68), Color.WHITE, 28);
+        btnQuitar.addActionListener(e -> accionQuitarItemCarrito());
+        pnlFormaPago.add(btnQuitar);
 
         pnlPagoTotal.add(pnlFormaPago, BorderLayout.NORTH);
 
         // Tarjeta de Totales
         JPanel pnlTotales = new JPanel(new GridLayout(3, 2, 4, 4));
         pnlTotales.setBackground(new Color(241, 245, 249));
-        pnlTotales.setBorder(new EmptyBorder(10, 15, 10, 15));
+        pnlTotales.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(10, 16, 10, 16)));
 
         pnlTotales.add(new JLabel("Subtotal Platos:"));
         lblSubtotal = new JLabel("S/ 0.00", SwingConstants.RIGHT);
         lblSubtotal.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         pnlTotales.add(lblSubtotal);
 
-        pnlTotales.add(new JLabel("Recargo Canal / Delivery:"));
+        pnlTotales.add(new JLabel("Recargo Canal / Envio:"));
         lblDescuento = new JLabel("S/ 5.00", SwingConstants.RIGHT);
         lblDescuento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         pnlTotales.add(lblDescuento);
@@ -313,19 +350,15 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         pnlTotales.add(lblTotalEtiqueta);
 
         lblTotalPagar = new JLabel("S/ 0.00", SwingConstants.RIGHT);
-        lblTotalPagar.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTotalPagar.setForeground(new Color(22, 101, 52)); // Verde dinero
+        lblTotalPagar.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTotalPagar.setForeground(COLOR_GREEN);
         pnlTotales.add(lblTotalPagar);
 
         pnlPagoTotal.add(pnlTotales, BorderLayout.CENTER);
 
-        // Botón Principal de Confirmación (Builder + Facade + LocalStorage)
-        JButton btnConfirmar = new JButton("✅ CONFIRMAR Y GUARDAR PEDIDO (Guardar en LocalStorage)");
-        btnConfirmar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnConfirmar.setBackground(new Color(22, 163, 74));
-        btnConfirmar.setForeground(Color.WHITE);
-        btnConfirmar.setPreferredSize(new Dimension(0, 48));
-        btnConfirmar.setFocusPainted(false);
+        // BOTON CONFIRMAR GIGANTE Y VISIBLE (Solucion definitiva a la visibilidad)
+        JButton btnConfirmar = crearBotonEstilizado("CONFIRMAR Y GUARDAR PEDIDO (Guardar en LocalStorage)", COLOR_GREEN, Color.WHITE, 48);
+        btnConfirmar.setFont(new Font("Segoe UI", Font.BOLD, 15));
         btnConfirmar.addActionListener(e -> accionConfirmarYGuardarPedido());
         pnlPagoTotal.add(btnConfirmar, BorderLayout.SOUTH);
 
@@ -336,29 +369,33 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     }
 
     // =========================================================================
-    // PESTAÑA 2: KDS / COCINA Y GESTIÓN DE PEDIDOS ACTIVOS
+    // PESTANA 2: COCINA Y KDS
     // =========================================================================
     private JPanel crearPestanaKDS() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(12, 15, 12, 15));
+        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        panel.setBackground(COLOR_GRAY_BG);
+        panel.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        // Barra de Herramientas y Estado
-        JPanel pnlTopKDS = new JPanel(new BorderLayout());
-        JLabel lblTituloKDS = new JLabel("📋 PEDIDOS REGISTRADOS EN LOCALSTORAGE (Cola de Atención y KDS)");
-        lblTituloKDS.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblTopKDS(pnlTopKDS, lblTituloKDS);
-        panel.add(pnlTopKDS, BorderLayout.NORTH);
+        JPanel pnlTop = new JPanel(new BorderLayout());
+        pnlTop.setOpaque(false);
+        JLabel lblTitulo = new JLabel("COLA DE PEDIDOS EN LOCALSTORAGE (Kitchen Display System)");
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTitulo.setForeground(COLOR_PRIMARY);
+        pnlTop.add(lblTitulo, BorderLayout.WEST);
 
-        // Tabla de Pedidos KDS
-        modeloPedidosKDS = new DefaultTableModel(new String[]{"ID Pedido", "Cliente", "Canal", "Contenido del Menú", "Total (S/)", "Pago", "Estado Actual"}, 0) {
+        lblEstadoKDS = new JLabel("Seleccione un pedido en la tabla para avanzar su estado.");
+        lblEstadoKDS.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        pnlTop.add(lblEstadoKDS, BorderLayout.EAST);
+        panel.add(pnlTop, BorderLayout.NORTH);
+
+        modeloPedidosKDS = new DefaultTableModel(new String[]{"ID Pedido", "Cliente", "Canal", "Contenido del Menu", "Total (S/)", "Pago", "Estado Actual"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
         tblPedidosKDS = new JTable(modeloPedidosKDS);
-        tblPedidosKDS.setRowHeight(30);
+        tblPedidosKDS.setRowHeight(32);
         tblPedidosKDS.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Colorear columna de estado
         tblPedidosKDS.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -386,53 +423,45 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
         panel.add(new JScrollPane(tblPedidosKDS), BorderLayout.CENTER);
 
-        // Panel de Control del Ciclo de Vida (STATE + COMMAND + OBSERVER)
-        JPanel pnlAccionesKDS = new JPanel(new GridLayout(1, 5, 8, 8));
-        pnlAccionesKDS.setBorder(new TitledBorder("Control del Ciclo de Vida del Pedido Seleccionado [State / Command / Observer]"));
+        // Botonera de Control de Estado
+        JPanel pnlAcciones = crearPanelTarjeta("Control del Ciclo de Vida del Pedido [State / Command / Observer]");
+        pnlAcciones.setLayout(new GridLayout(1, 5, 10, 10));
 
-        JButton btnAvanzarCocina = new JButton("🍳 1. Pasar a Cocina [Command]");
-        btnAvanzarCocina.addActionListener(e -> cambiarEstadoPedidoSeleccionado("EN_COCINA"));
+        JButton btnCocina = crearBotonEstilizado("1. Pasar a Cocina", COLOR_BLUE, Color.WHITE, 40);
+        btnCocina.addActionListener(e -> cambiarEstadoPedidoSeleccionado("EN_COCINA"));
 
-        JButton btnMarcarListo = new JButton("🛎️ 2. Marcar Listo [State]");
-        btnMarcarListo.addActionListener(e -> cambiarEstadoPedidoSeleccionado("LISTO"));
+        JButton btnListo = crearBotonEstilizado("2. Marcar Listo", COLOR_AMBER, Color.WHITE, 40);
+        btnListo.addActionListener(e -> cambiarEstadoPedidoSeleccionado("LISTO"));
 
-        JButton btnEntregar = new JButton("🛵 3. Entregar [State]");
+        JButton btnEntregar = crearBotonEstilizado("3. Entregar", COLOR_GREEN, Color.WHITE, 40);
         btnEntregar.addActionListener(e -> cambiarEstadoPedidoSeleccionado("ENTREGADO"));
 
-        JButton btnCancelar = new JButton("❌ Cancelar [Command Undo]");
-        btnCancelar.setBackground(new Color(254, 226, 226));
+        JButton btnCancelar = crearBotonEstilizado("4. Cancelar Pedido", COLOR_RED, Color.WHITE, 40);
         btnCancelar.addActionListener(e -> cambiarEstadoPedidoSeleccionado("CANCELADO"));
 
-        JButton btnRecargar = new JButton("🔄 Recargar LocalStorage");
+        JButton btnRecargar = crearBotonEstilizado("Recargar Lista", new Color(71, 85, 105), Color.WHITE, 40);
         btnRecargar.addActionListener(e -> cargarDatosDesdeLocalStorage());
 
-        pnlAccionesKDS.add(btnAvanzarCocina);
-        pnlAccionesKDS.add(btnMarcarListo);
-        pnlAccionesKDS.add(btnEntregar);
-        pnlAccionesKDS.add(btnCancelar);
-        pnlAccionesKDS.add(btnRecargar);
+        pnlAcciones.add(btnCocina);
+        pnlAcciones.add(btnListo);
+        pnlAcciones.add(btnEntregar);
+        pnlAcciones.add(btnCancelar);
+        pnlAcciones.add(btnRecargar);
 
-        panel.add(pnlAccionesKDS, BorderLayout.SOUTH);
+        panel.add(pnlAcciones, BorderLayout.SOUTH);
         return panel;
     }
 
-    private void lblTopKDS(JPanel pnlTopKDS, JLabel lblTituloKDS) {
-        pnlTopKDS.add(lblTituloKDS, BorderLayout.WEST);
-        lblEstadoKDS = new JLabel("💡 Seleccione un pedido en la tabla para avanzar su estado.");
-        lblEstadoKDS.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        pnlTopKDS.add(lblEstadoKDS, BorderLayout.EAST);
-    }
-
     // =========================================================================
-    // PESTAÑA 3: ALMACÉN E INVENTARIO (PATRÓN PROXY)
+    // PESTANA 3: INVENTARIO Y ALMACEN (PROXY)
     // =========================================================================
     private JPanel crearPestanaAlmacen() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(12, 15, 12, 15));
+        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        panel.setBackground(COLOR_GRAY_BG);
+        panel.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        // Selector de Roles (Proxy)
-        JPanel pnlRol = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
-        pnlRol.setBorder(new TitledBorder("Control de Acceso y Permisos por Rol [Patrón Proxy]"));
+        JPanel pnlRol = crearPanelTarjeta("Control de Acceso y Permisos por Rol [Patron Proxy]");
+        pnlRol.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 8));
         pnlRol.add(new JLabel("Rol Actual del Usuario:"));
 
         cmbRolAlmacen = new JComboBox<>(new String[]{
@@ -448,8 +477,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         pnlRol.add(cmbRolAlmacen);
         panel.add(pnlRol, BorderLayout.NORTH);
 
-        // Tabla de Inventario
-        modeloInventario = new DefaultTableModel(new String[]{"Código Insumo", "Descripción", "Stock Disponible", "Unidad", "Estado"}, 0) {
+        modeloInventario = new DefaultTableModel(new String[]{"Codigo Insumo", "Descripcion", "Stock Disponible", "Unidad", "Estado"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -459,12 +487,13 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         modeloInventario.addRow(new Object[]{"QUESO_CHEDDAR", "Queso Cheddar Tajadas", 40, "Tajadas", "DISPONIBLE"});
 
         tblInventario = new JTable(modeloInventario);
-        tblInventario.setRowHeight(28);
+        tblInventario.setRowHeight(30);
         panel.add(new JScrollPane(tblInventario), BorderLayout.CENTER);
 
-        // Botones de Operación sobre Stock
         JPanel pnlAccionesStock = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-        JButton btnConsultar = new JButton("🔍 Consultar Stock (Permitido a Todos)");
+        pnlAccionesStock.setOpaque(false);
+
+        JButton btnConsultar = crearBotonEstilizado("Consultar Stock (Permitido)", new Color(71, 85, 105), Color.WHITE, 38);
         btnConsultar.addActionListener(e -> {
             int row = tblInventario.getSelectedRow();
             if (row == -1) row = 0;
@@ -473,7 +502,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             JOptionPane.showMessageDialog(this, "Stock verificado correctamente mediante el PROXY para: " + codigo, "Proxy Consulta OK", JOptionPane.INFORMATION_MESSAGE);
         });
 
-        JButton btnDescontar = new JButton("📉 Descontar Stock de Insumo (Protegido por Proxy)");
+        JButton btnDescontar = crearBotonEstilizado("Descontar Stock (Protegido por Proxy)", COLOR_PRIMARY, Color.WHITE, 38);
         btnDescontar.addActionListener(e -> {
             int row = tblInventario.getSelectedRow();
             if (row == -1) row = 0;
@@ -482,9 +511,9 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             if (resultado) {
                 int stockActual = (int) modeloInventario.getValueAt(row, 2);
                 modeloInventario.setValueAt(stockActual - 1, row, 2);
-                JOptionPane.showMessageDialog(this, "Stock descontado con éxito por el rol autorizado.", "Proxy OK", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Stock descontado con exito por el rol autorizado.", "Proxy OK", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "¡ACCESO DENEGADO POR SEGURIDAD!\nEl rol 'MOZO' no tiene permisos para descontar insumos del almacén.", "Proxy Security Alert", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "ACCESO DENEGADO POR SEGURIDAD:\nEl rol 'MOZO' no tiene permisos para descontar insumos del almacen.", "Proxy Security Alert", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -496,15 +525,15 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
     }
 
     // =========================================================================
-    // PESTAÑA 4: INSPECTOR DE PATRONES GOF & CONSOLA
+    // PESTANA 4: AUDITORIA DE PATRONES
     // =========================================================================
     private JPanel crearPestanaAuditoria() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(12, 15, 12, 15));
+        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        panel.setBackground(COLOR_GRAY_BG);
+        panel.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        // Matriz de los 15 Patrones con Indicadores de Estado
-        JPanel pnlGridPatrones = new JPanel(new GridLayout(3, 5, 6, 6));
-        pnlGridPatrones.setBorder(new TitledBorder("Matriz de Validación de los 15 Patrones GOF"));
+        JPanel pnlGrid = crearPanelTarjeta("Matriz de los 15 Patrones de Diseno GOF (Verificados)");
+        pnlGrid.setLayout(new GridLayout(3, 5, 8, 8));
 
         String[] nombresPatrones = {
             "1. Singleton (ConexionDB)",
@@ -514,29 +543,28 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             "5. Composite (Combos)",
             "6. Decorator (Extras/Queso)",
             "7. Builder (PedidoBuilder)",
-            "8. Proxy (Seguridad Almacén)",
+            "8. Proxy (Seguridad Almacen)",
             "9. Memento (Undo/Snapshot)",
             "10. Adapter (Yape/Tarjeta)",
             "11. Bridge (Notificaciones)",
-            "12. Command (Órdenes Cocina)",
+            "12. Command (Ordenes Cocina)",
             "13. State (Ciclo de Vida)",
             "14. Observer (Monitores GPS)",
             "15. Facade (Fachada Maestra)"
         };
 
-        chkPatronesVerificados = new JCheckBox[15];
-        for (int i = 0; i < 15; i++) {
-            chkPatronesVerificados[i] = new JCheckBox(nombresPatrones[i], true);
-            chkPatronesVerificados[i].setEnabled(false);
-            chkPatronesVerificados[i].setFont(new Font("Segoe UI", Font.BOLD, 11));
-            chkPatronesVerificados[i].setForeground(new Color(22, 101, 52));
-            pnlGridPatrones.add(chkPatronesVerificados[i]);
+        for (String p : nombresPatrones) {
+            JCheckBox chk = new JCheckBox(p, true);
+            chk.setEnabled(false);
+            chk.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            chk.setForeground(new Color(22, 101, 52));
+            chk.setOpaque(false);
+            pnlGrid.add(chk);
         }
-        panel.add(pnlGridPatrones, BorderLayout.NORTH);
+        panel.add(pnlGrid, BorderLayout.NORTH);
 
-        // Consola de Salida de Logs
-        JPanel pnlLogs = new JPanel(new BorderLayout(5, 5));
-        pnlLogs.setBorder(new TitledBorder("Trazabilidad y Salida de Consola Técnica en Tiempo Real"));
+        JPanel pnlLogs = crearPanelTarjeta("Trazabilidad y Salida Tecnica en Tiempo Real");
+        pnlLogs.setLayout(new BorderLayout(8, 8));
 
         txtConsolaLogs = new JTextArea();
         txtConsolaLogs.setBackground(new Color(24, 24, 27));
@@ -544,33 +572,41 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         txtConsolaLogs.setFont(new Font("Consolas", Font.PLAIN, 12));
         txtConsolaLogs.setEditable(false);
         txtConsolaLogs.setMargin(new Insets(8, 8, 8, 8));
-
         pnlLogs.add(new JScrollPane(txtConsolaLogs), BorderLayout.CENTER);
 
-        JPanel pnlBotonesLogs = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-        JButton btnEjecutarFacadeTotal = new JButton("⚡ EJECUTAR DEMO INTEGRAL DE 15 PATRONES [FACADE]");
-        btnEjecutarFacadeTotal.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnEjecutarFacadeTotal.setBackground(new Color(37, 99, 235));
-        btnEjecutarFacadeTotal.setForeground(Color.WHITE);
-        btnEjecutarFacadeTotal.addActionListener(e -> {
+        JPanel pnlBotonesLogs = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 6));
+        pnlBotonesLogs.setOpaque(false);
+
+        JButton btnFacade = crearBotonEstilizado("EJECUTAR DEMO INTEGRAL DE 15 PATRONES [FACADE]", COLOR_BLUE, Color.WHITE, 38);
+        btnFacade.addActionListener(e -> {
             txtConsolaLogs.setText("");
             facade.procesarFlujoCompletoRestaurante(txtCliente.getText(), (String) cmbCanal.getSelectedItem());
             cargarDatosDesdeLocalStorage();
         });
 
-        JButton btnLimpiarLogs = new JButton("🧹 Limpiar Consola");
-        btnLimpiarLogs.addActionListener(e -> txtConsolaLogs.setText(""));
+        JButton btnLimpiar = crearBotonEstilizado("Limpiar Consola", new Color(148, 163, 184), new Color(15, 23, 42), 38);
+        btnLimpiar.addActionListener(e -> txtConsolaLogs.setText(""));
 
-        pnlBotonesLogs.add(btnEjecutarFacadeTotal);
-        pnlBotonesLogs.add(btnLimpiarLogs);
+        pnlBotonesLogs.add(btnFacade);
+        pnlBotonesLogs.add(btnLimpiar);
         pnlLogs.add(pnlBotonesLogs, BorderLayout.SOUTH);
 
         panel.add(pnlLogs, BorderLayout.CENTER);
         return panel;
     }
 
+    private JPanel crearPanelTarjeta(String titulo) {
+        JPanel card = new JPanel();
+        card.setBackground(COLOR_CARD_BG);
+        card.setBorder(new CompoundBorder(
+            new LineBorder(COLOR_BORDER, 1, true),
+            new CompoundBorder(new TitledBorder(titulo), new EmptyBorder(8, 12, 10, 12))
+        ));
+        return card;
+    }
+
     // =========================================================================
-    // LÓGICA DE NEGOCIO Y ACCIONES DE EVENTOS
+    // EVENTOS Y ACCIONES
     // =========================================================================
 
     private void actualizarDetalleCanal() {
@@ -579,7 +615,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             txtDetalleCanal.setText("Av. Central 456, Lima");
             lblDescuento.setText("S/ 5.00");
         } else if ("SALON".equalsIgnoreCase(canal)) {
-            txtDetalleCanal.setText("Mesa #12 (Salón Principal)");
+            txtDetalleCanal.setText("Mesa #12 (Salon Principal)");
             lblDescuento.setText("S/ 0.00");
         } else {
             txtDetalleCanal.setText("Retiro en Barra Principal");
@@ -599,7 +635,6 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             plato = new PlatoSimple("P3", "Lomo Saltado Criollo", 28.00);
         }
 
-        // Aplicar Decoradores (Decorator)
         StringBuilder extrasStr = new StringBuilder();
         if (chkSinCebolla.isSelected()) {
             plato = new SinCebollaDecorator(plato);
@@ -607,14 +642,13 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         }
         if (chkQueso.isSelected()) {
             plato = new ExtraQuesoDecorator(plato);
-            extrasStr.append("Extra Queso Cheddar; ");
+            extrasStr.append("Extra Queso; ");
         }
         if (chkPapas.isSelected()) {
             plato = new PorcionPapasExtraDecorator(plato);
-            extrasStr.append("Porción Papas Extra; ");
+            extrasStr.append("Papas Extra; ");
         }
 
-        // Aplicar Combo (Composite)
         IComponenteMenu itemFinal;
         if (chkCombo.isSelected()) {
             ComboMenuComposite combo = new ComboMenuComposite("Combo " + plato.getNombre(), 0.10);
@@ -629,12 +663,12 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         carritoItems.add(itemFinal);
         modeloCarrito.addRow(new Object[]{
             itemFinal.getNombre(),
-            extrasStr.length() > 0 ? extrasStr.toString() : "Estándar",
+            extrasStr.length() > 0 ? extrasStr.toString() : "Estandar",
             String.format("S/ %.2f", itemFinal.getPrecio())
         });
 
         recalcularTotales();
-        System.out.println("[CARRITO] Ítem agregado con éxito: " + itemFinal.getNombre() + " (S/ " + String.format("%.2f", itemFinal.getPrecio()) + ")");
+        System.out.println("[CARRITO] Item agregado: " + itemFinal.getNombre() + " (S/ " + String.format("%.2f", itemFinal.getPrecio()) + ")");
     }
 
     private void accionQuitarItemCarrito() {
@@ -644,7 +678,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             modeloCarrito.removeRow(row);
             recalcularTotales();
         } else {
-            JOptionPane.showMessageDialog(this, "Seleccione un ítem del carrito para quitar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un item del carrito para quitar.", "Aviso", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -672,8 +706,8 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
                 modeloCarrito.addRow(new Object[]{it.getNombre(), "Plantilla Preconfigurada [Prototype]", String.format("S/ %.2f", it.getPrecio())});
             }
             recalcularTotales();
-            System.out.println("✅ [PROTOTYPE] Pedido clonado y cargado al carrito.");
-            JOptionPane.showMessageDialog(this, "Plantilla cargada exitosamente mediante el patrón PROTOTYPE.", "Prototype OK", JOptionPane.INFORMATION_MESSAGE);
+            System.out.println("[PROTOTYPE] Pedido clonado y cargado al carrito.");
+            JOptionPane.showMessageDialog(this, "Plantilla cargada exitosamente mediante el patron PROTOTYPE.", "Prototype OK", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -707,7 +741,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
 
     private void accionConfirmarYGuardarPedido() {
         if (carritoItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "El carrito está vacío. Agregue platos antes de confirmar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El carrito esta vacio. Agregue platos antes de confirmar.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -726,7 +760,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         // 1. Validar Stock con PROXY
         boolean stockOk = proxyAlmacen.verificarStock("CARNE_RES", 1);
         if (!stockOk) {
-            JOptionPane.showMessageDialog(this, "No hay stock suficiente para procesar el pedido.", "Almacén", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No hay stock suficiente para procesar el pedido.", "Almacen", JOptionPane.ERROR_MESSAGE);
             return;
         }
         proxyAlmacen.descontarStock("CARNE_RES", 1);
@@ -736,11 +770,11 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         IPago pago = rbtnYape.isSelected() ? new YapePaymentAdapter("910286670") : new TarjetaPaymentAdapter("4557880012345678", cliente);
         pago.procesarPago(totalFinal, "ORD-" + System.currentTimeMillis() % 10000);
 
-        // 3. Notificación con BRIDGE
+        // 3. Notificacion con BRIDGE
         NotificacionComprobantePago notif = new NotificacionComprobantePago(new EmailImplementador());
         notif.notificar(cliente.toLowerCase().replace(" ", ".") + "@ejemplo.com", "Monto S/ " + String.format("%.2f", totalFinal));
 
-        // 4. Guardar en LocalStorage (Persistencia Simulada)
+        // 4. Guardar en LocalStorage
         String idPedido = "PED-" + (System.currentTimeMillis() % 10000);
         storageDB.guardarPedido(idPedido, cliente, canal, descripcionItems.toString(), totalFinal, metodoPagoNombre, "REGISTRADO");
 
@@ -750,7 +784,7 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         recalcularTotales();
         cargarDatosDesdeLocalStorage();
 
-        JOptionPane.showMessageDialog(this, "¡Pedido #" + idPedido + " registrado y guardado exitosamente en LocalStorage!", "Pedido Exitoso", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Pedido #" + idPedido + " registrado y guardado exitosamente en LocalStorage.", "Pedido Exitoso", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void cambiarEstadoPedidoSeleccionado(String nuevoEstado) {
@@ -763,7 +797,6 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
         String idPedido = (String) modeloPedidosKDS.getValueAt(row, 0);
         String estadoAnterior = (String) modeloPedidosKDS.getValueAt(row, 6);
 
-        // Simular Command y State
         Pedido pedidoDummy = new Pedido(idPedido, (String) modeloPedidosKDS.getValueAt(row, 1), (String) modeloPedidosKDS.getValueAt(row, 2));
         pedidoDummy.registrarObservador(new CocinaMonitorObserver());
         pedidoDummy.registrarObservador(new CajaMonitorObserver());
@@ -778,17 +811,15 @@ public class VentanaPrincipal extends JFrame implements IObservadorPedido {
             gestorComandos.ejecutarComandoDirecto(cmdCancel);
         }
 
-        // Actualizar en LocalStorage
         storageDB.actualizarEstado(idPedido, nuevoEstado);
         cargarDatosDesdeLocalStorage();
 
-        // Notificar con BRIDGE si está listo
         if ("LISTO".equalsIgnoreCase(nuevoEstado)) {
             NotificacionPedidoListo notifListo = new NotificacionPedidoListo(new WhatsAppImplementador());
-            notifListo.notificar("+51 910286670", "Tu pedido #" + idPedido + " está listo para despacho.");
+            notifListo.notificar("+51 910286670", "Tu pedido #" + idPedido + " esta listo para despacho.");
         }
 
-        lblEstadoKDS.setText("✅ Pedido #" + idPedido + " cambió de " + estadoAnterior + " ➔ " + nuevoEstado);
+        lblEstadoKDS.setText("Pedido #" + idPedido + " cambio de " + estadoAnterior + " a " + nuevoEstado);
     }
 
     private void cargarDatosDesdeLocalStorage() {
